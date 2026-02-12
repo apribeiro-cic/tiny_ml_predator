@@ -98,6 +98,48 @@ extern "C" int tflm_init(void) {
     return 0;
 }
 
+extern "C" int8_t* tflm_predict(float* input_data, float* output_data) {
+    if (!interpreter_ptr || !input_ptr || !output_ptr) {
+        printf("[TFLM] ERRO: Interpreter ou tensores não inicializados\n");
+        return nullptr;
+    }
+
+    // Preencher o tensor de entrada (suporta int8 e float32)
+    if (input_ptr->type == kTfLiteInt8) {
+        int8_t* input_int8 = input_ptr->data.int8;
+        for (size_t i = 0; i < input_ptr->bytes; i++) {
+            input_int8[i] = (int8_t)(input_data[i] / input_ptr->params.scale + input_ptr->params.zero_point);
+        }
+    } else if (input_ptr->type == kTfLiteFloat32) {
+        float* input_float = input_ptr->data.f;
+        for (size_t i = 0; i < input_ptr->bytes / sizeof(float); i++) {
+            input_float[i] = input_data[i];
+        }
+    }
+
+    // Invocar o modelo
+    TfLiteStatus invoke_status = interpreter_ptr->Invoke();
+    if (invoke_status != kTfLiteOk) {
+        printf("[TFLM] ERRO: Invoke falhou (status=%d)\n", (int)invoke_status);
+        return nullptr;
+    }
+
+    // Ler o tensor de saída (suporta int8 e float32)
+    if (output_ptr->type == kTfLiteInt8) {
+        int8_t* output_int8 = output_ptr->data.int8;
+        for (size_t i = 0; i < output_ptr->bytes; i++) {
+            output_data[i] = (output_int8[i] - output_ptr->params.zero_point) * output_ptr->params.scale;
+        }
+    } else if (output_ptr->type == kTfLiteFloat32) {
+        float* output_float = output_ptr->data.f;
+        for (size_t i = 0; i < output_ptr->bytes / sizeof(float); i++) {
+            output_data[i] = output_float[i];
+        }
+    }
+
+    return nullptr; // Retorna nullptr pois os dados já estão em output_data
+}
+
 extern "C" int8_t* tflm_input_ptr(int* nbytes) {
     if (!input_ptr) return nullptr;
     if (nbytes) *nbytes = input_ptr->bytes;

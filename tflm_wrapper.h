@@ -14,6 +14,8 @@ int8_t*  tflm_input_ptr(int* nbytes);
 // Ponteiro para o buffer de saída (INT8) e quantidade de bytes
 int8_t*  tflm_output_ptr(int* nbytes);
 
+int8_t* tflm_predict(float* input_data, float* output_data);
+
 // Quantização (scale e zero_point) de input/output
 float tflm_input_scale(void);
 int   tflm_input_zero_point(void);
