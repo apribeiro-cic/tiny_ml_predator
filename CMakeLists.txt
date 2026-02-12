@@ -69,7 +69,7 @@ endif()
 # ------------------------------------------------------------------------------
 
 add_executable(cnn_mnist
-    cnn_mnist.c
+    main.c
     tflm_wrapper.cpp
     lib/aht20/aht20.c
     lib/sensors/sensors.c
